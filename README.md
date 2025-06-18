@@ -1,98 +1,56 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 📡 TransGuardFakeGateway - WebSocket API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS 기반 WebSocket 서버로, 좌표 데이터를 FPS 주기에 맞춰 스트리밍하며, 일정 확률로 "튐(outlier)" 값을 포함할 수 있습니다.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🔌 연결 정보
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **URL**: `ws://localhost:3000`
+- **프로토콜**: Socket.IO
+- **Namespace**: `/` (기본)
+- **CORS**: 허용됨 (`origin: '*'`)
 
-## Project setup
+---
 
-```bash
-$ npm install
+## 🧩 지원 이벤트 목록
+
+| 이벤트명       | 방향            | 설명                            | 페이로드 예시                                                     |
+| -------------- | --------------- | ------------------------------- | ----------------------------------------------------------------- |
+| `connect`      | Server → Client | 클라이언트 연결 성공            | 없음                                                              |
+| `disconnect`   | Server → Client | 클라이언트 연결 해제            | 없음                                                              |
+| `start-stream` | Client → Server | 좌표 스트리밍 시작 요청         | `{ xMin, xMax, yMin, yMax, fps, outlierRate, outlierMultiplier }` |
+| `position`     | Server → Client | 주기적으로 전달되는 좌표 데이터 | `{ x: 37.2, y: 88.1, outlier: false }`                            |
+| `stop-stream`  | Client → Server | 좌표 스트리밍 종료 요청         | 없음                                                              |
+| `stopped`      | Server → Client | 서버가 스트리밍 종료 알림       | 없음                                                              |
+
+---
+
+## 🧪 Payload 상세 설명
+
+### 🔹 `start-stream`
+
+| 필드                | 타입   | 설명                                    |
+| ------------------- | ------ | --------------------------------------- |
+| `xMin`              | number | x 최소값                                |
+| `xMax`              | number | x 최대값                                |
+| `yMin`              | number | y 최소값                                |
+| `yMax`              | number | y 최대값                                |
+| `fps`               | number | 초당 좌표 전송 횟수 (1초 = 1000ms 기준) |
+| `outlierRate`       | number | 튐(outlier) 발생 확률 (%)               |
+| `outlierMultiplier` | number | 튐 발생 시 범위의 몇 배로 벗어날지 결정 |
+
+---
+
+## 🔁 데이터 흐름 예시
+
+```mermaid
+sequenceDiagram
+Client->>Server: connect
+Client->>Server: start-stream({xMin, xMax, yMin, yMax, fps, outlierRate, outlierMultiplier})
+loop every (1000 / fps) ms
+    Server-->>Client: position({x, y, outlier})
+end
+Client->>Server: stop-stream
+Server-->>Client: stopped
 ```
-
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
