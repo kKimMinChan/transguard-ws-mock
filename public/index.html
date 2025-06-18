@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WebSocket Stream Client</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h2>WebSocket Position Stream</h2>
+    <button onclick="startStream()">Start Stream</button>
+    <button onclick="stopStream()">Stop Stream</button>
+
+    <div id="log"></div>
+
+    <script>
+      const socket = io('http://localhost:3000'); // 서버 주소 변경 가능
+
+      socket.on('connect', () => {
+        log('✅ Connected to server');
+      });
+
+      socket.on('disconnect', () => {
+        log('❌ Disconnected from server');
+      });
+
+      socket.on('position', ({ x, y, outlier }) => {
+        if (outlier) {
+          log(`🚨 Outlier! x: ${x.toFixed(2)}, y: ${y.toFixed(2)}`);
+        } else {
+          log(`📍 x: ${x.toFixed(2)}, y: ${y.toFixed(2)}`);
+        }
+      });
+
+      socket.on('stopped', () => {
+        log('🛑 Stream stopped by server');
+      });
+
+      function startStream() {
+        socket.emit('start-stream', {
+          xMin: 0, // x min
+          xMax: 100, // x max
+          yMin: 0, // y min
+          yMax: 100, // y max
+          fps: 10, // 위치 전송 주기 (1초에 2번)
+          outlierRate: 10, // 이상치 발생 확률 (10%)
+          outlierMultiplier: 5, // 이상치 배수
+        });
+      }
+
+      function stopStream() {
+        socket.emit('stop-stream');
+      }
+
+      function log(message) {
+        const logDiv = document.getElementById('log');
+        const entry = document.createElement('div');
+        entry.textContent = message;
+        logDiv.appendChild(entry);
+      }
+    </script>
+  </body>
+</html>
